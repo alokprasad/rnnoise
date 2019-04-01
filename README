@@ -15,3 +15,10 @@ PCM files sampled at 48 kHz. It can be used as:
 ./examples/rnnoise_demo input.pcm output.pcm
 
 The output is also a 16-bit raw PCM file.
+
+
+#to Build using Cmake
+mkdir build
+cd  build
+cmake ..
+make
