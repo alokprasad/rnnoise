@@ -26,32 +26,44 @@
 
 #include <stdio.h>
 #include "rnnoise.h"
+#include <time.h>
 
-
+static double
+now_ms(void)
+{
+    struct timespec res;
+    clock_gettime(CLOCK_REALTIME, &res);
+    return 1000.0*res.tv_sec + (double)res.tv_nsec/1e6;
+}
 
 int main(int argc, char **argv) {
   int i;
   int first = 1;
-
+  double t0,t1;
   FILE *f1, *fout;
   DenoiseState *st;
   st = rnnoise_create();
   if (argc!=3) {
     fprintf(stderr, "usage: %s <noisy speech> <output denoised>\n", argv[0]);
-    return 1;
+  	  return 1;
   }
   f1 = fopen(argv[1], "r");
   fout = fopen(argv[2], "w");
+
+  t0 = now_ms(); 
   while (1) {
-    short x[FRAME_SIZE];
-    fread(x, sizeof(short), FRAME_SIZE, f1);
-    if (feof(f1)) break;
+		  short x[FRAME_SIZE];
+		  fread(x, sizeof(short), FRAME_SIZE, f1);
+		  if (feof(f1)) break;
 
-    rnnoise_process_frame(st, x, x);
-
-    if (!first) fwrite(x, sizeof(short), FRAME_SIZE, fout);
-    first = 0;
+		  rnnoise_process_frame(st, x, x);
+		  if (!first) fwrite(x, sizeof(short), FRAME_SIZE, fout);
+		  first = 0;
   }
+
+  t1 = now_ms(); 
+
+  printf("Conversion time %f\n",t1-t0);
   rnnoise_destroy(st);
   fclose(f1);
   fclose(fout);
