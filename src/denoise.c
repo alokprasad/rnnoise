@@ -40,35 +40,35 @@
 #include "rnn.h"
 #include "rnn_data.h"
 
-#define FRAME_SIZE_SHIFT 2
-#define FRAME_SIZE (120<<FRAME_SIZE_SHIFT)
-#define WINDOW_SIZE (2*FRAME_SIZE)
-#define FREQ_SIZE (FRAME_SIZE + 1)
+// #define FRAME_SIZE_SHIFT 2
+// #define FRAME_SIZE (120<<FRAME_SIZE_SHIFT)
+// #define WINDOW_SIZE (2*FRAME_SIZE)
+// #define FREQ_SIZE (FRAME_SIZE + 1)
 
-#define PITCH_MIN_PERIOD 60
-#define PITCH_MAX_PERIOD 768
-#define PITCH_FRAME_SIZE 960
-#define PITCH_BUF_SIZE (PITCH_MAX_PERIOD+PITCH_FRAME_SIZE)
+// #define PITCH_MIN_PERIOD 60
+// #define PITCH_MAX_PERIOD 768
+// #define PITCH_FRAME_SIZE 960
+// #define PITCH_BUF_SIZE (PITCH_MAX_PERIOD+PITCH_FRAME_SIZE)
 
-#define SQUARE(x) ((x)*(x))
+// #define SQUARE(x) ((x)*(x))
 
-#define SMOOTH_BANDS 1
+// #define SMOOTH_BANDS 1
 
-#if SMOOTH_BANDS
-#define NB_BANDS 22
-#else
-#define NB_BANDS 21
-#endif
+// #if SMOOTH_BANDS
+// #define NB_BANDS 22
+// #else
+// #define NB_BANDS 21
+// #endif
 
-#define CEPS_MEM 8
-#define NB_DELTA_CEPS 6
+// #define CEPS_MEM 8
+// #define NB_DELTA_CEPS 6
 
-#define NB_FEATURES (NB_BANDS+3*NB_DELTA_CEPS+2)
+// #define NB_FEATURES (NB_BANDS+3*NB_DELTA_CEPS+2)
 
 
-#ifndef TRAINING
-#define TRAINING 0
-#endif
+// #ifndef TRAINING
+// #define TRAINING 0
+// #endif
 
 static const opus_int16 eband5ms[] = {
 /*0  200 400 600 800  1k 1.2 1.4 1.6  2k 2.4 2.8 3.2  4k 4.8 5.6 6.8  8k 9.6 12k 15.6 20k*/
@@ -83,19 +83,19 @@ typedef struct {
   float dct_table[NB_BANDS*NB_BANDS];
 } CommonState;
 
-struct DenoiseState {
-  float analysis_mem[FRAME_SIZE];
-  float cepstral_mem[CEPS_MEM][NB_BANDS];
-  int memid;
-  float synthesis_mem[FRAME_SIZE];
-  float pitch_buf[PITCH_BUF_SIZE];
-  float pitch_enh_buf[PITCH_BUF_SIZE];
-  float last_gain;
-  int last_period;
-  float mem_hp_x[2];
-  float lastg[NB_BANDS];
-  RNNState rnn;
-};
+// struct DenoiseState {
+//   float analysis_mem[FRAME_SIZE];
+//   float cepstral_mem[CEPS_MEM][NB_BANDS];
+//   int memid;
+//   float synthesis_mem[FRAME_SIZE];
+//   float pitch_buf[PITCH_BUF_SIZE];
+//   float pitch_enh_buf[PITCH_BUF_SIZE];
+//   float last_gain;
+//   int last_period;
+//   float mem_hp_x[2];
+//   float lastg[NB_BANDS];
+//   RNNState rnn;
+// };
 
 #if SMOOTH_BANDS
 void compute_band_energy(float *bandE, const kiss_fft_cpx *X) {
@@ -468,7 +468,8 @@ void pitch_filter(kiss_fft_cpx *X, const kiss_fft_cpx *P, const float *Ex, const
   }
 }
 
-float rnnoise_process_frame(DenoiseState *st, float *out, const float *in) {
+float rnnoise_process_frame(DenoiseState *st, short *out, const short *in) {
+  
   int i;
   kiss_fft_cpx X[FREQ_SIZE];
   kiss_fft_cpx P[WINDOW_SIZE];
@@ -482,8 +483,19 @@ float rnnoise_process_frame(DenoiseState *st, float *out, const float *in) {
   int silence;
   static const float a_hp[2] = {-1.99599, 0.99600};
   static const float b_hp[2] = {-2, 1};
-  biquad(x, st->mem_hp_x, in, b_hp, a_hp, FRAME_SIZE);
+
+  float tmp_in[FRAME_SIZE];
+  float tmp_out[FRAME_SIZE];
+
+  for (i=0;i<FRAME_SIZE;i++) 
+  {
+    tmp_in[i] = in[i];
+    tmp_out[i] = out[i];
+  }
+  biquad(x, st->mem_hp_x, tmp_in, b_hp, a_hp, FRAME_SIZE);
+ 
   silence = compute_frame_features(st, X, P, Ex, Ep, Exp, features, x);
+
 
   if (!silence) {
     compute_rnn(&st->rnn, g, &vad_prob, features);
@@ -502,7 +514,10 @@ float rnnoise_process_frame(DenoiseState *st, float *out, const float *in) {
 #endif
   }
 
-  frame_synthesis(st, out, X);
+   frame_synthesis(st, tmp_out, X);
+   for (i=0;i<FRAME_SIZE;i++) 
+     out[i] = tmp_out[i];
+
   return vad_prob;
 }
 

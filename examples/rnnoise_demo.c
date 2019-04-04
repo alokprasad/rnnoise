@@ -27,12 +27,12 @@
 #include <stdio.h>
 #include "rnnoise.h"
 
-#define FRAME_SIZE 480
+
 
 int main(int argc, char **argv) {
   int i;
   int first = 1;
-  float x[FRAME_SIZE];
+
   FILE *f1, *fout;
   DenoiseState *st;
   st = rnnoise_create();
@@ -43,13 +43,13 @@ int main(int argc, char **argv) {
   f1 = fopen(argv[1], "r");
   fout = fopen(argv[2], "w");
   while (1) {
-    short tmp[FRAME_SIZE];
-    fread(tmp, sizeof(short), FRAME_SIZE, f1);
+    short x[FRAME_SIZE];
+    fread(x, sizeof(short), FRAME_SIZE, f1);
     if (feof(f1)) break;
-    for (i=0;i<FRAME_SIZE;i++) x[i] = tmp[i];
+
     rnnoise_process_frame(st, x, x);
-    for (i=0;i<FRAME_SIZE;i++) tmp[i] = x[i];
-    if (!first) fwrite(tmp, sizeof(short), FRAME_SIZE, fout);
+
+    if (!first) fwrite(x, sizeof(short), FRAME_SIZE, fout);
     first = 0;
   }
   rnnoise_destroy(st);
