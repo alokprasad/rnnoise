@@ -41,8 +41,7 @@ int main(int argc, char **argv) {
   int first = 1;
   double t0,t1;
   FILE *f1, *fout;
-  DenoiseState *st;
-  st = rnnoise_create();
+  rnnoise_create();
   if (argc!=3) {
     fprintf(stderr, "usage: %s <noisy speech> <output denoised>\n", argv[0]);
   	  return 1;
@@ -56,7 +55,7 @@ int main(int argc, char **argv) {
 		  fread(x, sizeof(short), FRAME_SIZE, f1);
 		  if (feof(f1)) break;
 
-		  rnnoise_process_frame(st, x, x);
+		  rnnoise_process_frame(x, x);
 		  if (!first) fwrite(x, sizeof(short), FRAME_SIZE, fout);
 		  first = 0;
   }
@@ -64,7 +63,7 @@ int main(int argc, char **argv) {
   t1 = now_ms(); 
 
   printf("Conversion time %f\n",t1-t0);
-  rnnoise_destroy(st);
+  rnnoise_destroy();
   fclose(f1);
   fclose(fout);
   return 0;

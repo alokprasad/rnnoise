@@ -76,6 +76,8 @@ static const opus_int16 eband5ms[] = {
 };
 
 
+DenoiseState *st;
+
 typedef struct {
   int init;
   kiss_fft_state *kfft;
@@ -284,19 +286,16 @@ int rnnoise_get_size() {
   return sizeof(DenoiseState);
 }
 
-int rnnoise_init(DenoiseState *st) {
+void rnnoise_init() {
   memset(st, 0, sizeof(*st));
-  return 0;
 }
 
-DenoiseState *rnnoise_create() {
-  DenoiseState *st;
+void rnnoise_create() {
   st = malloc(rnnoise_get_size());
-  rnnoise_init(st);
-  return st;
+  rnnoise_init();
 }
 
-void rnnoise_destroy(DenoiseState *st) {
+void rnnoise_destroy() {
   free(st);
 }
 
@@ -468,7 +467,7 @@ void pitch_filter(kiss_fft_cpx *X, const kiss_fft_cpx *P, const float *Ex, const
   }
 }
 
-float rnnoise_process_frame(DenoiseState *st, short *out, const short *in) {
+float rnnoise_process_frame(short *out, const short *in) {
   
   int i;
   kiss_fft_cpx X[FREQ_SIZE];
@@ -533,7 +532,7 @@ static void rand_resp(float *a, float *b) {
   b[0] = .75*uni_rand();
   b[1] = .75*uni_rand();
 }
-
+#if 0
 int main(int argc, char **argv) {
   int i;
   int count=0;
@@ -557,7 +556,7 @@ int main(int argc, char **argv) {
   DenoiseState *st;
   DenoiseState *noise_state;
   DenoiseState *noisy;
-  st = rnnoise_create();
+  rnnoise_create();
   noise_state = rnnoise_create();
   noisy = rnnoise_create();
   if (argc!=4) {
@@ -691,5 +690,6 @@ int main(int argc, char **argv) {
   fclose(fout);
   return 0;
 }
+#endif
 
 #endif
